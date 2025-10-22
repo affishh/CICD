@@ -1,29 +1,33 @@
 pipeline {
     agent any
 
-    environment {
-        SONARQUBE_SERVER = 'MySonarQube'  // Name from Jenkins SonarQube config
-        SONAR_TOKEN = credentials('SONARQUBE_TOKEN')
-    }
-
     stages {
-        stage('Install Dependencies') {
+        stage('Build') {
             steps {
-                sh 'npm install'
+                echo 'Building the app...'
             }
         }
 
-        stage('SonarQube Scan') {
+        stage('Start App') {
             steps {
-                withSonarQubeEnv("${SONARQUBE_SERVER}") {
-                    sh """
-                    sonar-scanner \
-                      -Dsonar.projectKey=nodejs-app \
-                      -Dsonar.sources=. \
-                      -Dsonar.login=sqa_4db7ef4b8b07959de0a35daf1066ef02d558cbdb
-                    """
-                }
+                echo 'Starting web app...'
+                sh 'nohup node index.js &'
+                sleep time: 5, unit: 'SECONDS'
             }
+        }
+
+        stage('Performance Test with K6') {
+            steps {
+                echo 'Running K6 performance test...'
+                sh 'k6 run loadtest.js'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up...'
+            sh 'pkill -f node || true'
         }
     }
 }
