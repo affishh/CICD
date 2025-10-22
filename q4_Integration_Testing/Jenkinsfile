@@ -1,0 +1,16 @@
+#These commands should be added in jenkins build steps -> Execute shell
+echo "Installing dependencies..."
+npm install
+
+echo "Starting server..."
+node index.js &          
+SERVER_PID=$!
+sleep 5                  
+
+echo "Running Postman collection..."
+newman run user_api_Integration_tests.postman_collection.json
+
+echo "Killing server..."
+kill $SERVER_PID
+
+newman run user_api_Integration_tests.postman_collection.json   --reporters cli,html   --reporter-html-export newman-report.html
